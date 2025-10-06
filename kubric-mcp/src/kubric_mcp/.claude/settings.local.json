@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/gokul/MyProjects/my/new/kubricks/custom-mcp/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

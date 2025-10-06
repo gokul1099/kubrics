@@ -1,0 +1,246 @@
+[
+    {
+        "label": "runpy",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "runpy",
+        "description": "runpy",
+        "detail": "runpy",
+        "documentation": {}
+    },
+    {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "site",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "site",
+        "description": "site",
+        "detail": "site",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "VideoFileClip",
+        "importPath": "moviepy",
+        "description": "moviepy",
+        "isExtraImport": true,
+        "detail": "moviepy",
+        "documentation": {}
+    },
+    {
+        "label": "ffmpeg_extract_subclip",
+        "importPath": "moviepy.video.io.ffmpeg_tools",
+        "description": "moviepy.video.io.ffmpeg_tools",
+        "isExtraImport": true,
+        "detail": "moviepy.video.io.ffmpeg_tools",
+        "documentation": {}
+    },
+    {
+        "label": "FastMCP",
+        "importPath": "fastmcp",
+        "description": "fastmcp",
+        "isExtraImport": true,
+        "detail": "fastmcp",
+        "documentation": {}
+    },
+    {
+        "label": "click",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "click",
+        "description": "click",
+        "detail": "click",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "uuid4",
+        "importPath": "uuid",
+        "description": "uuid",
+        "isExtraImport": true,
+        "detail": "uuid",
+        "documentation": {}
+    },
+    {
+        "label": "logger",
+        "importPath": "loguru",
+        "description": "loguru",
+        "isExtraImport": true,
+        "detail": "loguru",
+        "documentation": {}
+    },
+    {
+        "label": "extract_video_clip",
+        "importPath": "kubric_mcp.video.ingestion.tools",
+        "description": "kubric_mcp.video.ingestion.tools",
+        "isExtraImport": true,
+        "detail": "kubric_mcp.video.ingestion.tools",
+        "documentation": {}
+    },
+    {
+        "label": "bin_dir",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "bin_dir = os.path.dirname(abs_file)\nbase = bin_dir[: -len('bin') - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = 'mcp-kubrics-py3.13' or os.path.basename(base)\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "base",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "base = bin_dir[: -len('bin') - 1]  # strip away the bin part from the __file__, plus the path separator\n# prepend bin to PATH (this file is inside the bin directory)\nos.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = 'mcp-kubrics-py3.13' or os.path.basename(base)\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path.decode(\"utf-8\") if '' else path)",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"PATH\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"PATH\"] = os.pathsep.join([bin_dir, *os.environ.get(\"PATH\", \"\").split(os.pathsep)])\nos.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = 'mcp-kubrics-py3.13' or os.path.basename(base)\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path.decode(\"utf-8\") if '' else path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV\"] = base  # virtual env is right above bin directory\nos.environ[\"VIRTUAL_ENV_PROMPT\"] = 'mcp-kubrics-py3.13' or os.path.basename(base)\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path.decode(\"utf-8\") if '' else path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "os.environ[\"VIRTUAL_ENV_PROMPT\"]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "os.environ[\"VIRTUAL_ENV_PROMPT\"] = 'mcp-kubrics-py3.13' or os.path.basename(base)\n# add the virtual environments libraries to the host python import mechanism\nprev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path.decode(\"utf-8\") if '' else path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "prev_length",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "prev_length = len(sys.path)\nfor lib in '../lib/python3.13/site-packages'.split(os.pathsep):\n    path = os.path.realpath(os.path.join(bin_dir, lib))\n    site.addsitedir(path.decode(\"utf-8\") if '' else path)\nsys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.path[:]",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.path[:] = sys.path[prev_length:] + sys.path[0:prev_length]\nsys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.real_prefix",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.real_prefix = sys.prefix\nsys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "sys.prefix",
+        "kind": 5,
+        "importPath": ".venv.bin.activate_this",
+        "description": ".venv.bin.activate_this",
+        "peekOfCode": "sys.prefix = base",
+        "detail": ".venv.bin.activate_this",
+        "documentation": {}
+    },
+    {
+        "label": "extract_video_clip",
+        "kind": 2,
+        "importPath": "src.kubric_mcp.video.ingestion.tools",
+        "description": "src.kubric_mcp.video.ingestion.tools",
+        "peekOfCode": "def extract_video_clip(video_path: str, start_time: float, end_time: float, output_path: str = None) -> VideoFileClip:\n    if start_time >= end_time:\n        raise ValueError(\"start_time must be less than end_time\")\n    try:\n        extracted_clip = ffmpeg_extract_subclip(\n            video_path, start_time, end_time, output_path)\n        return extracted_clip\n    except e:\n        raise IOError(f\"Failed to extract subclip: {str(e)}\")",
+        "detail": "src.kubric_mcp.video.ingestion.tools",
+        "documentation": {}
+    },
+    {
+        "label": "process_video",
+        "kind": 2,
+        "importPath": "src.kubric_mcp.server",
+        "description": "src.kubric_mcp.server",
+        "peekOfCode": "def process_video(video_path: str) -> str:\n    \"\"\"\n    Process a video file and prepare it for searching\n    Args:\n        video_path: Path to the video file to process\n    Returns:\n        Success message indicating the video was processed\n    \"\"\"\n    from kubric_mcp.tools import process_video as _process_video\n    return _process_video(video_path)",
+        "detail": "src.kubric_mcp.server",
+        "documentation": {}
+    },
+    {
+        "label": "run_mcp",
+        "kind": 2,
+        "importPath": "src.kubric_mcp.server",
+        "description": "src.kubric_mcp.server",
+        "peekOfCode": "def run_mcp(port, host, transport):\n    \"\"\"\n    Run FastMcp server with provided port, host and transport\n    \"\"\"\n    mcp.run(host=host, port=port, transport=transport)\nif __name__ == \"__main__\":\n    run_mcp()",
+        "detail": "src.kubric_mcp.server",
+        "documentation": {}
+    },
+    {
+        "label": "mcp",
+        "kind": 5,
+        "importPath": "src.kubric_mcp.server",
+        "description": "src.kubric_mcp.server",
+        "peekOfCode": "mcp = FastMCP(\"VideoProcessor\")\n@mcp.tool()\ndef process_video(video_path: str) -> str:\n    \"\"\"\n    Process a video file and prepare it for searching\n    Args:\n        video_path: Path to the video file to process\n    Returns:\n        Success message indicating the video was processed\n    \"\"\"",
+        "detail": "src.kubric_mcp.server",
+        "documentation": {}
+    },
+    {
+        "label": "process_video",
+        "kind": 2,
+        "importPath": "src.kubric_mcp.tools",
+        "description": "src.kubric_mcp.tools",
+        "peekOfCode": "def process_video(video_path: str) -> str:\n    \"\"\"\n    Process a video file and prepare it for searching\n    Args:\n        video_path(str): Path to the video file to process\n    Returns:\n        str: success message indicating the video was processed\n    Raises:\n        ValueError: If the video file cannot be found or processed\n    \"\"\"",
+        "detail": "src.kubric_mcp.tools",
+        "documentation": {}
+    },
+    {
+        "label": "logger",
+        "kind": 5,
+        "importPath": "src.kubric_mcp.tools",
+        "description": "src.kubric_mcp.tools",
+        "peekOfCode": "logger = logger.bind(name=\"MCPVideoTools\")\ndef process_video(video_path: str) -> str:\n    \"\"\"\n    Process a video file and prepare it for searching\n    Args:\n        video_path(str): Path to the video file to process\n    Returns:\n        str: success message indicating the video was processed\n    Raises:\n        ValueError: If the video file cannot be found or processed",
+        "detail": "src.kubric_mcp.tools",
+        "documentation": {}
+    }
+]

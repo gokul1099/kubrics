@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/gokul/MyProjects/my/new/kubricks/**)",
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "Bash(poetry run python:*)",
+      "Bash(poetry show:*)",
+      "Bash(mv:*)",
+      "Bash(poetry install:*)",
+      "WebSearch",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
