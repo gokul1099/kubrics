@@ -1,0 +1,49 @@
+# Docker volumes
+./volumes
+volumes/
+
+# Notebook data (use MinIO instead)
+notebook/data/
+notebook/data/**/*
+*.ipynb_checkpoints
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.log

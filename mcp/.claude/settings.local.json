@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/gokul/MyProjects/my/new/kubricks/**)",
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "Bash(poetry run python:*)",
+      "Bash(poetry show:*)",
+      "Bash(mv:*)",
+      "Bash(poetry install:*)",
+      "WebSearch",
+      "Bash(timeout:*)",
+      "Bash(brew list:*)",
+      "Read(//Applications/**)",
+      "Bash(brew services stop:*)",
+      "Bash(brew uninstall:*)",
+      "Read(//opt/homebrew/var/**)",
+      "Read(//Users/gokul/MyProjects/my/new/kubricks-new/**)",
+      "Bash(find:*)",
+      "Bash(chmod:*)",
+      "Bash(poetry lock:*)",
+      "Bash(./postgres.sh start:*)",
+      "Bash(python3:*)",
+      "Bash(./postgres.sh test:*)",
+      "Bash(./minio.sh start:*)",
+      "Bash(./minio.sh test:*)",
+      "Bash(./minio.sh bucket:*)",
+      "Bash(./minio.sh list:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

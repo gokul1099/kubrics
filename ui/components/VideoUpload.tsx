@@ -13,12 +13,23 @@ export default function VideoUpload() {
       const uploadResponse = await fetch('http://localhost:8080/upload-video', {
         method:"POST",
         body: formData
+      }).then(async (res)=>{
+        const response = await res.json()
+        const processVideoResponse = await 
+          fetch("http://localhost:8080/process-video", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                      video_path: response.video_path
+                    })
+                  })
+          const videoResponse = await processVideoResponse.json()
+          console.log(videoResponse)
+        
       })
 
-      if(!uploadResponse.ok){
-        console.log(uploadResponse, "response from upload")
-        throw new Error('Failed to upload')
-      }
       }catch(e){
         console.log("Error in video uploading", e);
 

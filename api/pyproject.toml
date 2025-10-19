@@ -1,0 +1,29 @@
+[project]
+name = "kubric-api"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Gokulakrishnan",email = "sgokulcse10@gmail.com"}
+]
+readme = "README.md"
+requires-python =  ">=3.13,<4.0"
+dependencies = [
+    "click (>=8.3.0,<9.0.0)",
+    "fastapi (>=0.118.0,<0.119.0)",
+    "groq (>=0.32.0,<0.33.0)",
+    "instructor (>=1.11.3,<2.0.0)",
+    "ipykernel (>=6.30.1,<7.0.0)",
+    "loguru (>=0.7.3,<0.8.0)",
+    "minio (>=7.2.0,<8.0.0)",
+    "opik (>=1.8.67,<2.0.0)",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+    "ruff (>=0.13.3,<0.14.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "fastmcp (>=2.12.4,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

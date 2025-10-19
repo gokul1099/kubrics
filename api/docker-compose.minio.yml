@@ -1,0 +1,54 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: kubric-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000" # MinIO API
+      - "9001:9001" # MinIO Console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9001}
+    volumes:
+      - minio_data:/data
+      - ./docker/minio/init.sh:/docker-entrypoint-initdb.d/init.sh
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    networks:
+      - kubric-network
+
+  # MinIO Client for initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: kubric-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set kubric http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+      /usr/bin/mc mb kubric/${MINIO_BUCKET:-videos} --ignore-existing;
+      /usr/bin/mc mb kubric/${MINIO_BUCKET:-embeddings} --ignore-existing;
+      /usr/bin/mc mb kubric/${MINIO_BUCKET:-thumbnails} --ignore-existing;
+      /usr/bin/mc anonymous set download kubric/${MINIO_BUCKET:-videos};
+      /usr/bin/mc anonymous set download kubric/${MINIO_BUCKET:-thumbnails};
+      echo 'MinIO buckets initialized successfully';
+      exit 0;
+      "
+    networks:
+      - kubric-network
+
+networks:
+  kubric-network:
+    driver: bridge
+
+volumes:
+  minio_data:
+    driver: local
