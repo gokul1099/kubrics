@@ -1,21 +1,36 @@
 import logging
 import os
 from functools import lru_cache
+from pathlib import Path
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger("uvicorn")
 
+# Get absolute path to .env file
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+print(ENV_FILE)
+
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE), extra="ignore", env_file_encoding="utf8")
 
     OPIK_API_KEY: str
     OPIK_WORKSPACE: str
     OPIK_PROJECT: str
 
+    GROQ_API_KEY: str
+    # MinIO Configuration
+    MINIO_ENDPOINT: str = Field(default="http://localhost:9001/")
+    MINIO_ACCESS_KEY: str
+    MINIO_SECRET_KEY: str
+    MINIO_BUCKET_NAME: str
+    MINIO_SECURE: str = False
+
     # OPENAI Config
     OPENAI_API_KEY: str
-    AUDIO_TRANSCRIPT_MODEL: str = "gpt-4o-mini-transcribe"
+    AUDIO_TRANSCRIPT_MODEL: str = "whisper-large-v3-turbo"
     IMAGE_CAPTION_MODEL: str = "gpt-4o-mini"
 
     # Video Ingestion Config

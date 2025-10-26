@@ -1,8 +1,8 @@
 from typing import Annotated
 from fastapi import Depends
-from kubric_api.config import get_settings, Settings
+from kubric_mcp.config import get_settings, Settings
 
-from kubric_api.services.minio import MinIOService, get_minio_service
+from kubric_mcp.services.minio import MinIOService, get_minio_service
 
 
 def get_minio_client(

@@ -2250,6 +2250,18 @@ gmpy = ["gmpy2 (>=2.1.0a4) ; platform_python_implementation != \"PyPy\""]
 tests = ["pytest (>=4.6)"]
 
 [[package]]
+name = "munpy"
+version = "0.0.0"
+description = "\"Mobile U-Net for Low-Compute Deep Supervision Semantic Segmentation\""
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "munpy-0.0.0-py3-none-any.whl", hash = "sha256:c21656e47330694a5e9a6793b52849ebec8ec665fad1ca31ce07ee063bc78452"},
+    {file = "munpy-0.0.0.tar.gz", hash = "sha256:263cb42f1838bc573a8dc38ddacd43f9cb4428ae8f1e42f4251e29bd6683c401"},
+]
+
+[[package]]
 name = "nest-asyncio"
 version = "1.6.0"
 description = "Patch asyncio to allow nested event loops"
@@ -5961,4 +5973,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "==3.13.5"
-content-hash = "c4c6939606cdfdfae917394711cd0a7adade49242fe6f44ffbdc80872e1ec3f7"
+content-hash = "4ed0a5a294224519e2db22c8742c584ac3375008704605d9cf70371d5fd2ae4f"

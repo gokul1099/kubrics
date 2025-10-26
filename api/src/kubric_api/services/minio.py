@@ -70,6 +70,15 @@ class MinIOService:
             logger.error(f"Error uploading file: {e}")
             raise
 
+    def get_file(self, file_path: str):
+        try:
+            video_object = self.client.get_object(
+                self.bucket_name, file_path)
+            return video_object
+        except S3Error as e:
+            logger.error(f"Error in fetching object:{e}")
+            raise
+
 
 _minio_service:  None = None  # <-- define it globally
 

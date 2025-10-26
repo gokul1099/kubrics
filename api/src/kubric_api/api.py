@@ -105,7 +105,7 @@ async def root():
     return {"message": "Welcome to Kubrics API"}
 
 
-@app.post("/upload-video", response_model=str)
+@app.post("/upload-video", response_model=VideoUploadResponse)
 async def upload_video(file: UploadFile = File(...), minio: MinIOClient = None):
     """
     Upload a video and return the path
@@ -114,7 +114,7 @@ async def upload_video(file: UploadFile = File(...), minio: MinIOClient = None):
         raise HTTPException(status_code=400, detail="no file upload")
     video_id = uuid.uuid4()
     file_ext = Path(file.filename).suffix.lower()
-    object_name = f"videos/{video_id}/{file_ext}"
+    object_name = f"{video_id}{file_ext}"
     content = await file.read()
     logger.info("uploading ")
     try:
@@ -128,8 +128,8 @@ async def upload_video(file: UploadFile = File(...), minio: MinIOClient = None):
             }
         )
 
-        # return VideoUploadResponse(message="Video uploaded successfully", video_path=str(object_name))
-        return str(object_name)
+        return VideoUploadResponse(message="Video uploaded successfully", video_path=str(object_name))
+
     except Exception as e:
         logger.error("Error uploading videos : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -152,19 +152,16 @@ async def process_video(request: ProcessVideoRequest, bg_tasks: BackgroundTasks,
         """
         bg_task_status[task_id] = TaskStatus.IN_PROGRESS
 
-        if not Path(video_path).exists():
-            bg_task_status[task_id] = TaskStatus.FAILED
-            raise HTTPException(status_code=404, detail="Video file not found")
-
         try:
             mcp_client = Client(settings.MCP_SERVER)
             async with mcp_client:
-                _ = await mcp_client.call_tool("process_video", {video_path: request.video_path})
+                result = await mcp_client.call_tool("process_video", {"video_path": video_path})
+                logger.info(f"Video processing result: {result}")
+            bg_task_status[task_id] = TaskStatus.COMPLETED
         except Exception as e:
             logger.error(f"Error processing video {video_path}: {e}")
             bg_task_status[task_id] = TaskStatus.FAILED
-            raise HTTPException(status_code=500, detail=str(e))
-        bg_task_status[task_id] = TaskStatus.COMPLETED
+            # Don't raise HTTPException in background task as response is already sent
     logger.error(f"Path to video, {request.video_path}")
     bg_tasks.add_task(background_process_video, request.video_path, task_id)
     # return ProcessVideoResponse(message="Task completed Successfully", task_id=task_id)

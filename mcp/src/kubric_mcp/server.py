@@ -1,22 +1,34 @@
 from fastmcp import FastMCP
 import click
+import tempfile
+import os
+from kubric_mcp.tools import process_video
+from kubric_mcp.config import get_settings
+from kubric_mcp.services.minio import get_minio_service
+from kubric_mcp.video.ingestion.video_processor import VideoProcessor
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
-mcp = FastMCP("VideoProcessor")
+mcp = FastMCP("Kubric_MCP")
+
+executer = ThreadPoolExecutor(max_workers=5)
 
 
-@mcp.tool()
-def process_video(video_path: str) -> str:
-    """
-    Process a video file and prepare it for searching
+@mcp.tool(name="processsss_video")
+async def processss_video(video_path: str) -> str:
+    settings = get_settings()
+    minio_client = get_minio_service(settings)
 
-    Args:
-        video_path: Path to the video file to process
-
-    Returns:
-        Success message indicating the video was processed
-    """
-    from kubric_mcp.tools import process_video as _process_video
-    return _process_video(video_path)
+    metadata = minio_client.stat_object(
+        bucket_name=settings.MINIO_BUCKET_NAME, object_name=video_path)
+    videoProcessor = VideoProcessor(
+        minio_client=minio_client, video_path=video_path)
+    video_processor_task = asyncio.create_task(
+        videoProcessor._extract_frames())
+    videoProcessor.background_task.add(video_processor_task)
+    video_processor_task.add_done_callback(
+        videoProcessor.background_task.discard)
+    return f"Video Processing started for {metadata.object_name}"
 
 
 @click.command()
