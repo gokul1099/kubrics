@@ -23,6 +23,11 @@ dependencies = [
     "fastmcp (>=2.12.4,<3.0.0)"
 ]
 
+[project.scripts]
+server = "kubric_api.api:run_api"
+
+[tool.poetry]
+packages = [{include = "kubric_api", from = "src"}]
 
 [build-system]
 requires = ["hatchling"]

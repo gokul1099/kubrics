@@ -18,6 +18,11 @@ import io
 from PIL import Image
 from tqdm import tqdm
 from scipy.io import wavfile
+from minio.error import S3Error
+from pydub import AudioSegment
+from kubric_mcp.models import VideoIndex, AudioIndex, FrameIndex
+from kubric_mcp.services import AudioService, VideoService
+from kubric_mcp.db import get_session
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
 print(DEVICE, "device")
@@ -32,11 +37,16 @@ class VideoProcessor():
         self.settings = get_settings()
         self.bucket_name = self.settings.MINIO_BUCKET_NAME
         self.frames = None
-        self._load_video()
         self.openai_client = OpenAI(api_key=self.settings.OPENAI_API_KEY)
         self.groq_client = Groq(api_key=self.settings.GROQ_API_KEY)
         self.audio_transcripts = []
         self.background_task = set()
+        self.db_session = next(get_session())
+        self.audio_service = AudioService(session=self.db_session)
+        self.video_service = VideoService(session=self.db_session)
+        self.video_id = None
+        self._load_video()
+
 
     def _load_video(self):
         suffix = Path(self.video_path).suffix
@@ -48,6 +58,11 @@ class VideoProcessor():
             self.video_path,
             self.temp_video_path
         )
+        metadata = self.minio_client.stat_object(
+        bucket_name=self.settings.MINIO_BUCKET_NAME, object_name=self.video_path)
+        video_entry = self.video_service._make_entry(minio_path=self.video_path, filename=metadata.object_name)
+        self.video_id = video_entry.id
+        print("✅  [Video Processor]: Video entry made in databaase")
         return
 
     def _extract_frames(self):
@@ -80,53 +95,85 @@ class VideoProcessor():
         audio_task = asyncio.create_task(self._process_audio())
         self.background_task.add(audio_task)
         audio_task.add_done_callback(self.background_task.discard)
-        return
+        return 
 
     async def _process_audio(self):
         """
         Extract the audio from the video and start audio processing
         """
-        video_clip = VideoFileClip(self.temp_video_path)
-        temp_audio = tempfile.NamedTemporaryFile(
-            suffix=".wav",
-            delete=False
-        )
+        audio = AudioSegment.from_file(self.temp_video_path)
+        total_duration_ms = len(audio)
+        chunk_duration_ms = self.settings.AUDIO_CHUNK_LENGTH * 1000
 
-        self.temp_audio_path = temp_audio.name
-        video_clip.audio.write_audiofile(self.temp_audio_path)
-        split_info = self._split_audio(video_clip.audio)
-        tasks = [
-            self._transcribe_audio(video_clip.audio, chunk["start"], chunk["end"], chunk["index"]) for chunk in split_info
-        ]
-        print(split_info, "infor")
+        print(f"total duration: {total_duration_ms/ 1000:.2f}" )
+        tasks = []
+        audio_chunks_info =[]
+        for i, start_ms in enumerate(range(0, total_duration_ms, chunk_duration_ms)):
+            end_ms = min(start_ms + chunk_duration_ms, total_duration_ms)
+            audio_chunks_info.append({"start_time": start_ms, "end_time": end_ms, "chunk_index":i})
+            tasks.append(self._transcribe_audio(audio, start_ms, end_ms, i))
+        print("[Video Processor] Audio Chunk Infor prepared", audio_chunks_info)
+        self.audio_service._create_entry(self.video_id, audio_chunks_info=audio_chunks_info)
+        print(f"Processing {len(tasks)} chunks...")
         # results = await asyncio.gather(*tasks)
-        # print(f"Audio Processing completed: {results}")
-        video_clip.close()
 
-    async def _transcribe_audio(self, audio, start, end, index):
-        subclip = audio.subclipped(start, end)
-        audio_array = subclip.to_soundarray(fps=16000)
 
-        if len(audio_array.shape) > 1:
-            audio_array = audio_array.mean(axis=1)
+    
 
-        audio_array = np.int16(audio_array*32767)
+    def _store_audio_to_minio(self,buffer, index):
+        try:
+            if not self.minio_client.bucket_exists("audio"):
+                self.minio_client.make_bucket("audio")
+                print(f"Bucket created")
+        except S3Error as e:
+            print(f"Error {e}")
+        bucket_name= "audio"
+        try:
+            self.minio_client.put_object(
+                bucket_name=bucket_name,
+                object_name= index,
+                content_type="audio/wav",
+                data=buffer,
+                length =buffer.getbuffer().nbytes
+            )
+            print(f"audio {index} stored")
+        except S3Error as e:
+            print(f"Error in storing {e}")
+
+    async def _transcribe_audio(self, audio, start_ms, end_ms, index):
+        
+        
+        chunk = audio[start_ms: end_ms]
+        chunk = chunk.set_channels(1)
+        chunk = chunk.set_frame_rate(16000)
+
         buffer = io.BytesIO()
-        wavfile.write(buffer, 16000, audio_array)
+        chunk.export(buffer, format="wav")
         buffer.seek(0)
         buffer.name = f"chunk_{index}.wav"
-        response = self.groq_client.audio.transcriptions.create(
-            model=self.settings.AUDIO_TRANSCRIPT_MODEL,
-            file=buffer,
-            # timestamp_granularities=["word"]
-        )
-        print(response, "audio")
+        try:
+            transcription = self.groq_client.audio.transcriptions.create(
+                model="whisper-large-v3",
+                file=buffer,
+                response_format="json"
+            )
+            print("got response", transcription)
+            return {
+                'chunk_index': index,
+                'transcription': transcription.text
+            }
+        except Exception as e:
+            print(f"Error transcribing chunk {index}: {e}")
+            return None
+        finally:
+            buffer.close()
+
 
     def _split_audio(self, audio):
         duration = audio.duration
         chunks_info = []
         current_start = 0
-        # created start and end time for splitting audio with overlap
+
         while current_start < duration:
             chunk_end = min(
                 current_start + self.settings.AUDIO_CHUNK_LENGTH, duration)
