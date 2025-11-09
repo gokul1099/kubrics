@@ -18,8 +18,8 @@ def init_db():
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
     ##Drop all data
-    print("Dropping data")
-    Base.metadata.drop_all(engine)
+    # print("Dropping data")
+    # Base.metadata.drop_all(engine)
     print("Create data")
     Base.metadata.create_all(engine)
     print("Database tables created successfully")

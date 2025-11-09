@@ -1,16 +1,13 @@
 from fastmcp import FastMCP
 import click
-import tempfile
 import os
-from kubric_mcp.tools import process_video
 from kubric_mcp.config import get_settings
 from kubric_mcp.services.minio import get_minio_service
 from kubric_mcp.video.ingestion.video_processor import VideoProcessor
 import asyncio
 from kubric_mcp.db import init_db, get_session
 from concurrent.futures import ThreadPoolExecutor
-from kubric_mcp.services import VideoService
-
+from kubric_mcp.video.ingestion.video_processor import VideoPorcessorStatus
 mcp = FastMCP("Kubric_MCP")
 
 executer = ThreadPoolExecutor(max_workers=5)
@@ -20,22 +17,22 @@ executer = ThreadPoolExecutor(max_workers=5)
 async def processss_video(video_path: str) -> str:
     settings = get_settings()
     minio_client = get_minio_service(settings)
-    db_session = next(get_session())
 
-    video_service = VideoService(session=db_session)
-
-    # metadata = minio_client.stat_object(
-    #     bucket_name=settings.MINIO_BUCKET_NAME, object_name=video_path)
     videoProcessor = VideoProcessor(
         minio_client=minio_client, video_path=video_path)
-    # video_service._make_entry(minio_path=video_path, filename=metadata.object_name)
-
-    video_processor_task = asyncio.create_task(
+    current_video_status =videoProcessor._check_status()
+    print("Current Video Status", current_video_status)
+    if (current_video_status == VideoPorcessorStatus.PENDING):
+        video_processor_task = asyncio.create_task(
         videoProcessor._extract_frames())
-    videoProcessor.background_task.add(video_processor_task)
-    video_processor_task.add_done_callback(
-        videoProcessor.background_task.discard)
-    return f"Video Processing started for {metadata.object_name}"
+        videoProcessor.background_task.add(video_processor_task)
+        video_processor_task.add_done_callback(
+            videoProcessor.background_task.discard)
+    elif(current_video_status == VideoPorcessorStatus.PENDING_EMBEDDING):
+        videoProcessor._generate_embedding_for_transription()
+    elif(current_video_status == VideoPorcessorStatus.PENDING_TRANSCRIPTION):
+        videoProcessor._start_audio_processsing()
+    return f"Video Processing started"
 
 
 @click.command()

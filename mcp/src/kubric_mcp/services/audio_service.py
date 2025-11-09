@@ -56,10 +56,12 @@ class AudioService:
         try:
             for transcription in transcriptions:
                 chunk_id = chunk_id_map.get(transcription["chunk_index"])
+                print("[Audio Processor]: Log: transcription", transcription)
+                print("[Audio Processor]: Log: transcription Text", transcription["transcription"])
                 if chunk_id:
                     updates.append({
                         "id":chunk_id,
-                        "transcription" : transcription,
+                        "transcription_text" : transcription["transcription"],
                         "status": AudioStatus.PENDING_EMBEDDING,
                         "updated_at": datetime.now(timezone.utc)
                     })
@@ -72,6 +74,27 @@ class AudioService:
             self.session.rollback()
             print(f"❌  [Audio Service] audio transcription insertion failed: {e}")
             raise
+
+    def _update_transcription_embedding(self, embdeddings_info):
+        updates=[]
+        print(embdeddings_info[0],"ssss")
+        try:
+            for embeddings in embdeddings_info:
+                id = embeddings["id"]
+                embedding = embeddings["embedding"]
+                updates.append({
+                    "id":id,
+                    "transcript_embedding": embedding,
+                    "status": AudioStatus.COMPLETE
+                })
+            self.session.bulk_update_mappings(AudioIndex, updates)
+            self.session.commit()
+            print(f"✅  [Audio Service] embeddings updated successfully")
+        except Exception as e:
+            self.session.rollback()
+            print(f"❌  [Audio Service] embedding updation failed",e)
+            raise
+
 
 
             

@@ -20,14 +20,22 @@ from tqdm import tqdm
 from scipy.io import wavfile
 from minio.error import S3Error
 from pydub import AudioSegment
-from kubric_mcp.models import VideoIndex, AudioIndex, FrameIndex
+from kubric_mcp.models import VideoIndex, AudioIndex, FrameIndex, AudioStatus, VideoStatus
 from kubric_mcp.services import AudioService, VideoService
 from kubric_mcp.db import get_session
+from tqdm.asyncio import tqdm
+from enum import Enum
+from sqlalchemy import select
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
 print(DEVICE, "device")
 
-
+class VideoPorcessorStatus(str, Enum):
+    PENDING_EMBEDDING = "pending_embedding"
+    PENDING_TRANSCRIPTION = "peding_transcription"
+    PROCESSING_DONE = "done"
+    PENDING = "pending"
+    
 class VideoProcessor():
     def __init__(self, minio_client: Minio, video_path: str):
         self.minio_client = minio_client
@@ -60,10 +68,33 @@ class VideoProcessor():
         )
         metadata = self.minio_client.stat_object(
         bucket_name=self.settings.MINIO_BUCKET_NAME, object_name=self.video_path)
-        video_entry = self.video_service._make_entry(minio_path=self.video_path, filename=metadata.object_name)
-        self.video_id = video_entry.id
-        print("✅  [Video Processor]: Video entry made in databaase")
+        is_video_exists = self.db_session.query(VideoIndex).filter(VideoIndex.minio_path == self.video_path).first()
+        if(not is_video_exists):
+            video_entry = self.video_service._make_entry(minio_path=self.video_path, filename=metadata.object_name)
+            self.video_id = video_entry.id
+            print("✅  [Video Processor]: Video entry made in databaase")
+
+        else:
+            print("✅  [Video Processor]: Video already exists in databaase")
+
+            self.video_id = is_video_exists.id
+
         return
+    
+    def _check_status(self):
+        video = self.db_session.query(VideoIndex).filter(VideoIndex.id == self.video_id).first()
+        if(video.status == VideoStatus.PROCESSING):
+            audio = self.db_session.query(AudioIndex).filter(AudioIndex.video_id == self.video_id).all()
+            if any(item.status == AudioStatus.PENDING_EMBEDDING for item in audio):
+                print("[Video Processor]: Audio transcription done. start trnascription emebedding")
+                return VideoPorcessorStatus.PENDING_EMBEDDING
+            if any(item.status == AudioStatus.PENDING_TRANSCRIPTION for item in audio):
+                print("[Video Processor]: start trnascription")
+                return VideoPorcessorStatus.PENDING_TRANSCRIPTION
+        elif(video.status == VideoStatus.FAILED or video.status == VideoStatus.UPLOADED):
+            print("[Video Processing]: start video proecssing")
+            return VideoPorcessorStatus.PENDING
+
 
     def _extract_frames(self):
         if not self.temp_video_path:
@@ -88,10 +119,12 @@ class VideoProcessor():
                     f"VideoProcessor: _extract_frames: could not read frame {frame_idx}")
         cap.release()
         self.frames = frame
-        print(f"Extracted frames : {len(frames)}")
-        print("Starting to audi processing in background")
+        print(f"✅ [Video Processor] Extracted frames : {len(frames)}")
+        print("[Video Processor] Starting to audio processing in background")
         # self._generate_embedding_for_frames()
+        self.__start_audio_processsing()
 
+    def _start_audio_processsing(self):
         audio_task = asyncio.create_task(self._process_audio())
         self.background_task.add(audio_task)
         audio_task.add_done_callback(self.background_task.discard)
@@ -104,21 +137,26 @@ class VideoProcessor():
         audio = AudioSegment.from_file(self.temp_video_path)
         total_duration_ms = len(audio)
         chunk_duration_ms = self.settings.AUDIO_CHUNK_LENGTH * 1000
-
-        print(f"total duration: {total_duration_ms/ 1000:.2f}" )
-        tasks = []
         audio_chunks_info =[]
         for i, start_ms in enumerate(range(0, total_duration_ms, chunk_duration_ms)):
             end_ms = min(start_ms + chunk_duration_ms, total_duration_ms)
             audio_chunks_info.append({"start_time": start_ms, "end_time": end_ms, "chunk_index":i})
-            tasks.append(self._transcribe_audio(audio, start_ms, end_ms, i))
-        print("[Video Processor] Audio Chunk Infor prepared", audio_chunks_info)
+        coroutines = [
+            self._transcribe_audio(audio, chunk['start_time'], chunk['end_time'], chunk['chunk_index']) 
+            for chunk in audio_chunks_info
+        ]
+        print("✅ [Video Processor] Audio Chunk Info prepared", audio_chunks_info)
         self.audio_service._create_entry(self.video_id, audio_chunks_info=audio_chunks_info)
-        print(f"Processing {len(tasks)} chunks...")
-        # results = await asyncio.gather(*tasks)
+        print(f"[Video Processor] Processing {len(coroutines)} chunks...")
+        results=[]
+        with tqdm(total= len(coroutines), desc="[Video Processor]: transcribing audio chunks") as pbar:
+            for coro in asyncio.as_completed(coroutines):
+                result = await coro
+                results.append(result)
+                pbar.update(1)
+        self.audio_service._update_transcription(self.video_id, transcriptions=results)
+        return True
 
-
-    
 
     def _store_audio_to_minio(self,buffer, index):
         try:
@@ -141,8 +179,6 @@ class VideoProcessor():
             print(f"Error in storing {e}")
 
     async def _transcribe_audio(self, audio, start_ms, end_ms, index):
-        
-        
         chunk = audio[start_ms: end_ms]
         chunk = chunk.set_channels(1)
         chunk = chunk.set_frame_rate(16000)
@@ -153,11 +189,10 @@ class VideoProcessor():
         buffer.name = f"chunk_{index}.wav"
         try:
             transcription = self.groq_client.audio.transcriptions.create(
-                model="whisper-large-v3",
+                model=self.settings.AUDIO_TRANSCRIPT_MODEL,
                 file=buffer,
                 response_format="json"
             )
-            print("got response", transcription)
             return {
                 'chunk_index': index,
                 'transcription': transcription.text
@@ -167,6 +202,28 @@ class VideoProcessor():
             return None
         finally:
             buffer.close()
+
+    def _generate_embedding_for_transription(self):
+        audio_transcriptions = self.db_session.execute(select(AudioIndex.transcription_text, AudioIndex.id)
+                                                       .where(AudioIndex.video_id == self.video_id)
+                                                       .where(AudioIndex.status == AudioStatus.PENDING_EMBEDDING)).all()
+        transcription_list = [item[0] for item in audio_transcriptions]
+        transcription_ids = [item[1] for item in audio_transcriptions]
+
+        results= []
+        
+        try:
+            for index in tqdm(range(0, len(transcription_list)), desc="Generating embedding for transcriptions"):
+                embedding_response = self.openai_client.embeddings.create(
+                    model=self.settings.TRANSCRIPT_SIMILARITY_EMDB_MODEL,
+                    input= transcription_list[index]
+                )
+                results.append({"id":transcription_ids[index], "embedding": embedding_response.data[0].embedding})
+
+            self.audio_service._update_transcription_embedding(embdeddings_info=results)
+            print("✅ [Video Processor] embedding generated for transcription")
+        except Exception as e:
+            print('❌ [Video Processor] embedding generation failed',e)
 
 
     def _split_audio(self, audio):
