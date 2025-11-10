@@ -1,11 +1,17 @@
-from sqlalchemy import Column, Float, DateTime, Text, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Float, DateTime, Text, ForeignKey, UniqueConstraint, Enum as PGEnum
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import VECTOR
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import uuid
 from .base import Base
+from enum import Enum
 
+class FrameStatus(str,Enum):
+    PENDING_IMAGE_EMBEDDING = "pending_image_embedding"
+    PENDING_CAPTION_EMBEDDING = "pending_caption_embedding"
+    PENDING_CAPTON = "pending_caption"
+    COMPLETE = "complete"
 
 
 class FrameIndex(Base):
@@ -19,6 +25,7 @@ class FrameIndex(Base):
     frame_embedding = Column(VECTOR(512), nullable=False)
     created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=datetime.now(timezone.utc),onupdate=datetime.now(timezone.utc), nullable=False)
+    status = Column(PGEnum(FrameStatus), nullable=False, default="pending_image_embedding")
 
     
     ## relationships 

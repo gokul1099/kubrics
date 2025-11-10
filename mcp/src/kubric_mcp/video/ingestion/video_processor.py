@@ -20,7 +20,7 @@ from tqdm import tqdm
 from scipy.io import wavfile
 from minio.error import S3Error
 from pydub import AudioSegment
-from kubric_mcp.models import VideoIndex, AudioIndex, FrameIndex, AudioStatus, VideoStatus
+from kubric_mcp.models import VideoIndex, AudioIndex, FrameIndex, AudioStatus, VideoStatus, FrameStatus
 from kubric_mcp.services import AudioService, VideoService
 from kubric_mcp.db import get_session
 from tqdm.asyncio import tqdm
@@ -33,6 +33,9 @@ print(DEVICE, "device")
 class VideoPorcessorStatus(str, Enum):
     PENDING_EMBEDDING = "pending_embedding"
     PENDING_TRANSCRIPTION = "peding_transcription"
+    PENDING_IMAGE_EMBEDDING = "pending_image_embedding"
+    PENDING_CAPTION_GENERATION = "pending_caption_generation"
+    PENDING_CAPTION_EMBEDDING = "pending_caption_emebedding"
     PROCESSING_DONE = "done"
     PENDING = "pending"
     
@@ -83,7 +86,7 @@ class VideoProcessor():
     
     def _check_status(self):
         video = self.db_session.query(VideoIndex).filter(VideoIndex.id == self.video_id).first()
-        if(video.status == VideoStatus.PROCESSING):
+        if(not video.audio_processing_completed):
             audio = self.db_session.query(AudioIndex).filter(AudioIndex.video_id == self.video_id).all()
             if any(item.status == AudioStatus.PENDING_EMBEDDING for item in audio):
                 print("[Video Processor]: Audio transcription done. start trnascription emebedding")
@@ -91,6 +94,17 @@ class VideoProcessor():
             if any(item.status == AudioStatus.PENDING_TRANSCRIPTION for item in audio):
                 print("[Video Processor]: start trnascription")
                 return VideoPorcessorStatus.PENDING_TRANSCRIPTION
+        elif(not video.frame_processing_completed):
+            frames = self.db_session.query(FrameIndex).filter(FrameIndex.id == self.video_id).all()
+            if any(item.status == FrameStatus.PENDING_IMAGE_EMBEDDING for item in frames):
+                print("Start image embedding")
+                return VideoPorcessorStatus.PENDING_IMAGE_EMBEDDING
+            elif any(item.status == FrameStatus.PENDING_CAPTON for item in frames):
+                print("Start image captioning")
+                return VideoPorcessorStatus.PENDING_CAPTION_GENERATION
+            elif any(item.status == FrameStatus.PENDING_CAPTION_EMBEDDING for item in frames):
+                print("Start caption embedding")
+                return VideoPorcessorStatus.PENDING_CAPTION_EMBEDDING
         elif(video.status == VideoStatus.FAILED or video.status == VideoStatus.UPLOADED):
             print("[Video Processing]: start video proecssing")
             return VideoPorcessorStatus.PENDING
@@ -121,8 +135,8 @@ class VideoProcessor():
         self.frames = frame
         print(f"✅ [Video Processor] Extracted frames : {len(frames)}")
         print("[Video Processor] Starting to audio processing in background")
-        # self._generate_embedding_for_frames()
-        self.__start_audio_processsing()
+        self._generate_embedding_for_frames()
+        # self.__start_audio_processsing()
 
     def _start_audio_processsing(self):
         audio_task = asyncio.create_task(self._process_audio())
@@ -221,6 +235,7 @@ class VideoProcessor():
                 results.append({"id":transcription_ids[index], "embedding": embedding_response.data[0].embedding})
 
             self.audio_service._update_transcription_embedding(embdeddings_info=results)
+            self.db_session.query(VideoIndex).filter(VideoIndex.id == self.video_id).update({"audio_processing_completed", True})
             print("✅ [Video Processor] embedding generated for transcription")
         except Exception as e:
             print('❌ [Video Processor] embedding generation failed',e)

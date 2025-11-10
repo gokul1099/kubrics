@@ -32,6 +32,8 @@ async def processss_video(video_path: str) -> str:
         videoProcessor._generate_embedding_for_transription()
     elif(current_video_status == VideoPorcessorStatus.PENDING_TRANSCRIPTION):
         videoProcessor._start_audio_processsing()
+    elif(current_video_status == VideoPorcessorStatus.PENDING_IMAGE_EMBEDDING):
+        videoProcessor._generate_embedding_for_frames()
     return f"Video Processing started"
 
 
